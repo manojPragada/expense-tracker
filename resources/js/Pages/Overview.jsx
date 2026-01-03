@@ -145,9 +145,9 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
 
             <div className="py-0">
                 <div className="mx-auto max-w-full">
-                    <div className="grid grid-cols-1 gap-1 lg:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-1 lg:grid-cols-3">
                         {/* Custom Yearly Breakdown Chart */}
-                        <div className="overflow-hidden bg-white shadow-card dark:bg-gray-800 sm:rounded-xl border-2 border-gray-300 dark:border-gray-700">
+                        <div className="overflow-hidden bg-white shadow-card dark:bg-gray-800 sm:rounded-xl border-2 border-gray-300 dark:border-gray-700 col-span-2">
                             <div className="p-4">
                                 <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
                                     Yearly Breakdown
@@ -168,7 +168,7 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
                                                 onMouseLeave={() => setHoveredMonth(null)}
                                             >
                                                 {/* Desktop Layout: Month - Bar - Amount */}
-                                                <div className="hidden md:flex items-center gap-3">
+                                                <div className="hidden md:flex items-center gap-1">
                                                     {/* Month Label - Fixed Width on Left */}
                                                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-20 flex-shrink-0">
                                                         {month.month}
@@ -215,7 +215,7 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
                                                     </div>
 
                                                     {/* Amount - Fixed Width on Right */}
-                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 w-24 flex-shrink-0 text-right">
+                                                    <span className="text-sm font-medium text-gray-900 dark:text-gray-100 w-20 flex-shrink-0 text-right">
                                                         {monthTotal > 0 ? formatCurrency(monthTotal) : '-'}
                                                     </span>
                                                 </div>

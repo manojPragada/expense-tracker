@@ -9,7 +9,9 @@ import { useState } from 'react';
 export default function SubmitForm({ users, categories }) {
     const { auth } = usePage().props;
     const [type, setType] = useState('expense');
-    const today = new Date().toISOString().split('T')[0];
+    // Use local time (not UTC) for today
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     const expenseForm = useForm({
         user_id: auth?.user?.id || users[0]?.id || '',
