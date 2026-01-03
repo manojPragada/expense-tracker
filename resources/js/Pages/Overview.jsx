@@ -18,7 +18,7 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
 
     const exportToExcel = () => {
         // Prepare yearly overview table data
-        const tableData = yearlyBreakdown.map(month => {
+        const tableData = normalizedYearlyBreakdown.map(month => {
             const row = {
                 'Month': `${month.month} ${selectedYear}`,
             };
@@ -42,11 +42,11 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
             'Month': 'Total',
         };
         categories.forEach(category => {
-            const categoryTotal = yearlyBreakdown.reduce((sum, month) => sum + (month.categories[category.name] || 0), 0);
+            const categoryTotal = normalizedYearlyBreakdown.reduce((sum, month) => sum + (month.categories[category.name] || 0), 0);
             totalsRow[category.name] = categoryTotal;
         });
-        const yearlyExpenseTotal = yearlyBreakdown.reduce((sum, month) => sum + Object.values(month.categories).reduce((s, v) => s + v, 0), 0);
-        const yearlyIncomeTotal = yearlyBreakdown.reduce((sum, month) => sum + (month.income || 0), 0);
+        const yearlyExpenseTotal = normalizedYearlyBreakdown.reduce((sum, month) => sum + Object.values(month.categories).reduce((s, v) => s + v, 0), 0);
+        const yearlyIncomeTotal = normalizedYearlyBreakdown.reduce((sum, month) => sum + (month.income || 0), 0);
         totalsRow['Total Expenditure'] = yearlyExpenseTotal;
         totalsRow['Income'] = yearlyIncomeTotal;
         totalsRow['Gross Savings'] = yearlyIncomeTotal - yearlyExpenseTotal;
@@ -75,6 +75,16 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
     };
     
     // Build category colors from database categories
+    // Normalize all numeric values to ensure they're proper numbers
+    const normalizedYearlyBreakdown = yearlyBreakdown.map(month => ({
+        ...month,
+        income: parseFloat(month.income) || 0,
+        categories: Object.entries(month.categories).reduce((acc, [key, value]) => {
+            acc[key] = parseFloat(value) || 0;
+            return acc;
+        }, {})
+    }));
+
     const categoryColors = {};
     const categoryTextColors = {};
     
@@ -85,9 +95,9 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
         });
     }
 
-    // Calculate max value for scaling bars
+    // Calculate max value for scaling bars - use normalized data
     const maxMonthTotal = Math.max(
-        ...yearlyBreakdown.map(month => 
+        ...normalizedYearlyBreakdown.map(month => 
             Object.values(month.categories).reduce((sum, val) => sum + val, 0)
         ),
         1
@@ -101,7 +111,13 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
     }));
 
     const formatCurrency = (value) => {
-        return `$${parseFloat(value).toFixed(2)}`;
+        const num = parseFloat(value) || 0;
+        return `$${num.toFixed(2)}`;
+    };
+
+    const formatSavings = (value) => {
+        const num = parseFloat(value) || 0;
+        return num.toFixed(2);
     };
 
     return (
@@ -140,7 +156,7 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
 
                                 {/* Custom Bar Chart */}
                                 <div className="space-y-3">
-                                    {yearlyBreakdown.map((month, idx) => {
+                                    {normalizedYearlyBreakdown.map((month, idx) => {
                                         const monthTotal = Object.values(month.categories).reduce((sum, val) => sum + val, 0);
                                         let cumulativeWidth = 0;
 
@@ -184,7 +200,7 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
                                                                         >
                                                                             {widthPercent > 8 && (
                                                                                 <span className="text-xs font-medium text-white px-1 truncate">
-                                                                                    ${amount.toFixed(0)}
+                                                                                    ${parseFloat(amount || 0).toFixed(0)}
                                                                                 </span>
                                                                             )}
                                                                         </div>
@@ -242,7 +258,7 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
                                                                             >
                                                                                 {widthPercent > 8 && (
                                                                                     <span className="text-xs font-medium text-white px-1 truncate">
-                                                                                        ${amount.toFixed(0)}
+                                                                                        ${parseFloat(amount || 0).toFixed(0)}
                                                                                     </span>
                                                                                 )}
                                                                             </div>
@@ -438,7 +454,7 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200 dark:divide-gray-700 dark:bg-gray-800">
-                                        {yearlyBreakdown.map((month, idx) => {
+                                        {normalizedYearlyBreakdown.map((month, idx) => {
                                             const monthTotal = Object.values(month.categories).reduce((sum, val) => sum + val, 0);
                                             const monthIncome = month.income || 0;
                                             const monthSavings = monthIncome - monthTotal;
@@ -457,18 +473,18 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
                                                                     backgroundColor: amount > 0 ? `${category.color}15` : 'transparent'
                                                                 }}
                                                             >
-                                                                {amount > 0 ? `$${amount.toFixed(2)}` : '-'}
+                                                                {amount > 0 ? `$${parseFloat(amount || 0).toFixed(2)}` : '-'}
                                                             </td>
                                                         );
                                                     })}
                                                     <td className="px-3 py-2 whitespace-nowrap text-xs text-right font-semibold text-gray-900 dark:text-gray-100 border-l-2 border-gray-400 dark:border-gray-500">
-                                                        ${monthTotal.toFixed(2)}
+                                                        ${parseFloat(monthTotal || 0).toFixed(2)}
                                                     </td>
                                                     <td className="px-3 py-2 whitespace-nowrap text-xs text-right font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20">
-                                                        {monthIncome > 0 ? `$${monthIncome.toFixed(2)}` : '-'}
+                                                        {monthIncome > 0 ? `$${parseFloat(monthIncome || 0).toFixed(2)}` : '-'}
                                                     </td>
                                                     <td className={`px-3 py-2 whitespace-nowrap text-xs text-right font-medium ${monthSavings >= 0 ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20' : 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20'}`}>
-                                                        ${monthSavings.toFixed(2)}
+                                                        ${parseFloat(monthSavings || 0).toFixed(2)}
                                                     </td>
                                                 </tr>
                                             );
@@ -479,7 +495,7 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
                                                 Total
                                             </td>
                                             {categories && categories.map((category) => {
-                                                const categoryTotal = yearlyBreakdown.reduce((sum, month) => {
+                                                const categoryTotal = normalizedYearlyBreakdown.reduce((sum, month) => {
                                                     return sum + (month.categories[category.name] || 0);
                                                 }, 0);
                                                 return (
@@ -491,26 +507,26 @@ export default function Overview({ yearlyBreakdown, categoryData, availableYears
                                                             color: categoryTotal > 0 ? category.color : 'inherit'
                                                         }}
                                                     >
-                                                        {categoryTotal > 0 ? `$${categoryTotal.toFixed(2)}` : '-'}
+                                                        {categoryTotal > 0 ? `$${parseFloat(categoryTotal || 0).toFixed(2)}` : '-'}
                                                     </td>
                                                 );
                                             })}
                                             <td className="px-3 py-2 whitespace-nowrap text-xs text-right font-bold text-gray-900 dark:text-gray-100 border-l-2 border-gray-400 dark:border-gray-500">
-                                                ${yearlyBreakdown.reduce((sum, month) => {
-                                                    return sum + Object.values(month.categories).reduce((s, v) => s + v, 0);
-                                                }, 0).toFixed(2)}
+                                                ${parseFloat(normalizedYearlyBreakdown.reduce((sum, month) => {
+                                                    return sum + Object.values(month.categories).reduce((s, v) => s + parseFloat(v || 0), 0);
+                                                }, 0) || 0).toFixed(2)}
                                             </td>
                                             <td className="px-3 py-2 whitespace-nowrap text-xs text-right font-bold text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/40">
-                                                ${yearlyBreakdown.reduce((sum, month) => sum + (month.income || 0), 0).toFixed(2)}
+                                                ${parseFloat(normalizedYearlyBreakdown.reduce((sum, month) => sum + parseFloat(month.income || 0), 0) || 0).toFixed(2)}
                                             </td>
                                             <td className={`px-3 py-2 whitespace-nowrap text-xs text-right font-bold ${
-                                                (yearlyBreakdown.reduce((sum, month) => sum + (month.income || 0), 0) - 
-                                                yearlyBreakdown.reduce((sum, month) => sum + Object.values(month.categories).reduce((s, v) => s + v, 0), 0)) >= 0 
+                                                (normalizedYearlyBreakdown.reduce((sum, month) => sum + parseFloat(month.income || 0), 0) - 
+                                                normalizedYearlyBreakdown.reduce((sum, month) => sum + Object.values(month.categories).reduce((s, v) => s + parseFloat(v || 0), 0), 0)) >= 0 
                                                 ? 'text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/40' 
                                                 : 'text-red-700 dark:text-red-300 bg-red-100 dark:bg-red-900/40'
                                             }`}>
-                                                ${(yearlyBreakdown.reduce((sum, month) => sum + (month.income || 0), 0) - 
-                                                yearlyBreakdown.reduce((sum, month) => sum + Object.values(month.categories).reduce((s, v) => s + v, 0), 0)).toFixed(2)}
+                                                ${parseFloat((normalizedYearlyBreakdown.reduce((sum, month) => sum + parseFloat(month.income || 0), 0) - 
+                                                normalizedYearlyBreakdown.reduce((sum, month) => sum + Object.values(month.categories).reduce((s, v) => s + parseFloat(v || 0), 0), 0)) || 0).toFixed(2)}
                                             </td>
                                         </tr>
                                     </tbody>

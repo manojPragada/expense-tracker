@@ -97,7 +97,7 @@ class OverviewController extends Controller
             $monthData = [
                 'month' => $monthName,
                 'categories' => [],
-                'income' => $monthlyIncome->get($month, 0)
+                'income' => (float) $monthlyIncome->get($month, 0)
             ];
             
             $monthExpenses = $monthlyData->get($month, collect());
@@ -135,7 +135,7 @@ class OverviewController extends Controller
             ->get();
         }
 
-        $totalExpenses = $categoryTotals->sum('total');
+        $totalExpenses = (float) $categoryTotals->sum('total');
         
         $categoryData = $categoryTotals
             ->filter(function ($item) {
@@ -145,7 +145,7 @@ class OverviewController extends Controller
                 return [
                     'category' => $item->category->name,
                     'amount' => (float) $item->total,
-                    'percentage' => $totalExpenses > 0 ? round((($item->total / $totalExpenses) * 100), 1) : 0,
+                    'percentage' => $totalExpenses > 0 ? (float) round((((float) $item->total / $totalExpenses) * 100), 1) : 0,
                 ];
             })->sortByDesc('amount')->values();
 
