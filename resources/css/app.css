@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        font-size: 14px;
+    }
+    
+    body {
+        font-size: 1rem;
+    }
+}
+
+@layer utilities {
+    /* Custom light mode shadows for better depth */
+    .shadow-soft {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+    }
+    
+    .shadow-card {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.06);
+    }
+    
+    .border-light {
+        border-color: rgba(0, 0, 0, 0.12);
+    }
+}
+
+.dark .recharts-cartesian-axis-tick-value tspan {
+    fill: white !important;
+}
+
+.recharts-pie-label-text {
+    display: none !important;
+}
+
+html {
+    transition: all 0.3s ease-in-out;
+}
