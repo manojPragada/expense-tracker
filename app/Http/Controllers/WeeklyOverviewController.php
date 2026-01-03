@@ -14,16 +14,31 @@ class WeeklyOverviewController extends Controller
 {
     public function index(Request $request): Response
     {
-        // Get all years that have expense or income data
-        $expenseYears = Expense::selectRaw("DISTINCT CAST(strftime('%Y', date) AS INTEGER) as year")
-            ->orderBy('year', 'desc')
-            ->pluck('year')
-            ->toArray();
+        // Get database driver
+        $driver = DB::connection()->getDriverName();
         
-        $incomeYears = Income::selectRaw("DISTINCT CAST(strftime('%Y', date) AS INTEGER) as year")
-            ->orderBy('year', 'desc')
-            ->pluck('year')
-            ->toArray();
+        // Get all years that have expense or income data
+        if ($driver === 'sqlite') {
+            $expenseYears = Expense::selectRaw("DISTINCT CAST(strftime('%Y', date) AS INTEGER) as year")
+                ->orderBy('year', 'desc')
+                ->pluck('year')
+                ->toArray();
+            
+            $incomeYears = Income::selectRaw("DISTINCT CAST(strftime('%Y', date) AS INTEGER) as year")
+                ->orderBy('year', 'desc')
+                ->pluck('year')
+                ->toArray();
+        } else {
+            $expenseYears = Expense::selectRaw("DISTINCT YEAR(date) as year")
+                ->orderBy('year', 'desc')
+                ->pluck('year')
+                ->toArray();
+            
+            $incomeYears = Income::selectRaw("DISTINCT YEAR(date) as year")
+                ->orderBy('year', 'desc')
+                ->pluck('year')
+                ->toArray();
+        }
         
         // Merge and get unique years
         $availableYears = array_unique(array_merge($expenseYears, $incomeYears));

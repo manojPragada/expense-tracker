@@ -13,11 +13,22 @@ class OverviewController extends Controller
 {
     public function index(Request $request): Response
     {
+        // Get database driver
+        $driver = DB::connection()->getDriverName();
+        
         // Get all years that have expense data
-        $availableYears = Expense::select(DB::raw("DISTINCT CAST(strftime('%Y', date) AS INTEGER) as year"))
-            ->orderBy('year', 'desc')
-            ->pluck('year')
-            ->toArray();
+        if ($driver === 'sqlite') {
+            $availableYears = Expense::select(DB::raw("DISTINCT CAST(strftime('%Y', date) AS INTEGER) as year"))
+                ->orderBy('year', 'desc')
+                ->pluck('year')
+                ->toArray();
+        } else {
+            // MySQL, PostgreSQL, etc.
+            $availableYears = Expense::select(DB::raw("DISTINCT YEAR(date) as year"))
+                ->orderBy('year', 'desc')
+                ->pluck('year')
+                ->toArray();
+        }
         
         // If no data exists, use current year
         if (empty($availableYears)) {
@@ -31,27 +42,52 @@ class OverviewController extends Controller
         $categories = Category::orderBy('order')->get();
         
         // Get monthly expenses by category for the selected year
-        $monthlyData = Expense::select(
-            DB::raw("CAST(strftime('%m', date) AS INTEGER) as month"),
-            'category_id',
-            DB::raw('SUM(amount) as total')
-        )
-        ->whereRaw("strftime('%Y', date) = ?", [(string) $selectedYear])
-        ->whereNotNull('category_id') // Only expenses with valid categories
-        ->groupBy('month', 'category_id')
-        ->orderBy('month')
-        ->get()
-        ->groupBy('month');
+        if ($driver === 'sqlite') {
+            $monthlyData = Expense::select(
+                DB::raw("CAST(strftime('%m', date) AS INTEGER) as month"),
+                'category_id',
+                DB::raw('SUM(amount) as total')
+            )
+            ->whereRaw("strftime('%Y', date) = ?", [(string) $selectedYear])
+            ->whereNotNull('category_id')
+            ->groupBy('month', 'category_id')
+            ->orderBy('month')
+            ->get()
+            ->groupBy('month');
+        } else {
+            $monthlyData = Expense::select(
+                DB::raw("MONTH(date) as month"),
+                'category_id',
+                DB::raw('SUM(amount) as total')
+            )
+            ->whereYear('date', $selectedYear)
+            ->whereNotNull('category_id')
+            ->groupBy('month', 'category_id')
+            ->orderBy('month')
+            ->get()
+            ->groupBy('month');
+        }
 
         // Get monthly income data
-        $monthlyIncome = \App\Models\Income::select(
-            DB::raw("CAST(strftime('%m', date) AS INTEGER) as month"),
-            DB::raw('SUM(amount) as total')
-        )
-        ->whereRaw("strftime('%Y', date) = ?", [(string) $selectedYear])
-        ->groupBy('month')
-        ->get()
-        ->pluck('total', 'month');
+        if ($driver === 'sqlite') {
+            $monthlyIncome = \App\Models\Income::select(
+                DB::raw("CAST(strftime('%m', date) AS INTEGER) as month"),
+                DB::raw('SUM(amount) as total')
+            )
+            ->whereRaw("strftime('%Y', date) = ?", [(string) $selectedYear])
+            ->groupBy('month')
+            ->get()
+            ->pluck('total', 'month');
+        } else {
+            $monthlyIncome = \App\Models\Income::select(
+                DB::raw("MONTH(date) as month"),
+                DB::raw('SUM(amount) as total')
+            )
+            ->whereYear('date', $selectedYear)
+            ->groupBy('month')
+            ->get()
+            ->pluck('total', 'month');
+        }
 
         // Format data for chart
         $yearlyBreakdown = [];
@@ -77,15 +113,27 @@ class OverviewController extends Controller
         }
 
         // Get category totals and percentages
-        $categoryTotals = Expense::select(
-            'category_id',
-            DB::raw('SUM(amount) as total')
-        )
-        ->with('category')
-        ->whereRaw("strftime('%Y', date) = ?", [(string) $selectedYear])
-        ->whereNotNull('category_id') // Only get expenses with categories
-        ->groupBy('category_id')
-        ->get();
+        if ($driver === 'sqlite') {
+            $categoryTotals = Expense::select(
+                'category_id',
+                DB::raw('SUM(amount) as total')
+            )
+            ->with('category')
+            ->whereRaw("strftime('%Y', date) = ?", [(string) $selectedYear])
+            ->whereNotNull('category_id')
+            ->groupBy('category_id')
+            ->get();
+        } else {
+            $categoryTotals = Expense::select(
+                'category_id',
+                DB::raw('SUM(amount) as total')
+            )
+            ->with('category')
+            ->whereYear('date', $selectedYear)
+            ->whereNotNull('category_id')
+            ->groupBy('category_id')
+            ->get();
+        }
 
         $totalExpenses = $categoryTotals->sum('total');
         
