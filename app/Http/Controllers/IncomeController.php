@@ -21,7 +21,7 @@ class IncomeController extends Controller
 
         Income::create($validated);
 
-        return redirect()->route('submissions')->with('success', 'Income created successfully.');
+        return redirect()->route('submissions', ['type' => 'incomes'])->with('success', 'Income created successfully.');
     }
 
     public function update(Request $request, Income $income)
@@ -36,13 +36,13 @@ class IncomeController extends Controller
 
         $income->update($validated);
 
-        return redirect()->route('submissions')->with('success', 'Income updated successfully.');
+        return redirect()->route('submissions', ['type' => 'incomes'])->with('success', 'Income updated successfully.');
     }
 
     public function destroy(Income $income)
     {
         $income->delete();
 
-        return redirect()->route('submissions')->with('success', 'Income deleted successfully.');
+        return redirect()->route('submissions', ['type' => 'incomes'])->with('success', 'Income deleted successfully.');
     }
 }

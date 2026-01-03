@@ -20,7 +20,7 @@ class ExpenseController extends Controller
 
         Expense::create($validated);
 
-        return redirect()->route('submissions')->with('success', 'Expense created successfully.');
+        return redirect()->route('submissions', ['type' => 'expenses'])->with('success', 'Expense created successfully.');
     }
 
     public function update(Request $request, Expense $expense)
@@ -36,13 +36,13 @@ class ExpenseController extends Controller
 
         $expense->update($validated);
 
-        return redirect()->route('submissions')->with('success', 'Expense updated successfully.');
+        return redirect()->route('submissions', ['type' => 'expenses'])->with('success', 'Expense updated successfully.');
     }
 
     public function destroy(Expense $expense)
     {
         $expense->delete();
 
-        return redirect()->route('submissions')->with('success', 'Expense deleted successfully.');
+        return redirect()->route('submissions', ['type' => 'expenses'])->with('success', 'Expense deleted successfully.');
     }
 }

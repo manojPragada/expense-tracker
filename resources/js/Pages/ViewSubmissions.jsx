@@ -4,14 +4,28 @@ import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import DeleteConfirmationDialog from '@/Components/DeleteConfirmationDialog';
-import { Head, useForm } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, useForm, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
 
 export default function ViewSubmissions({ expenses, incomes, users, categories }) {
+    // Get initial tab from URL query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.get('type') === 'incomes' ? 'incomes' : 'expenses';
+    
     const [editingExpense, setEditingExpense] = useState(null);
     const [editingIncome, setEditingIncome] = useState(null);
     const [deleteDialog, setDeleteDialog] = useState({ show: false, type: null, id: null, name: '' });
-    const [activeTab, setActiveTab] = useState('expenses');
+    const [activeTab, setActiveTab] = useState(initialTab);
+
+    // Update URL when tab changes
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        router.get(route('submissions', { type: tab }), {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
 
     const expenseForm = useForm({
         user_id: '',
@@ -106,7 +120,7 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
                             <nav className="-mb-px flex space-x-8 px-4">
                                 <button
                                     onClick={() => {
-                                        setActiveTab('expenses');
+                                        handleTabChange('expenses');
                                         cancelEdit();
                                     }}
                                     className={`whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
@@ -119,7 +133,7 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
                                 </button>
                                 <button
                                     onClick={() => {
-                                        setActiveTab('incomes');
+                                        handleTabChange('incomes');
                                         cancelEdit();
                                     }}
                                     className={`whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium transition-colors ${
