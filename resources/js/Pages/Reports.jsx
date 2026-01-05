@@ -10,11 +10,16 @@ export default function Reports({
     currentMonthIncome,
     previousMonthIncome,
     incomeChange,
+    currentMonthExpenditure,
+    previousMonthExpenditure,
+    expenditureChange,
     monthlyData,
     currentWeek,
     previousWeek,
     currentWeekIncome,
     previousWeekIncome,
+    currentWeekExpenditure,
+    previousWeekExpenditure,
     weeklyData,
 }) {
     const [activeTabState, setActiveTabState] = useState(activeTab);
@@ -39,6 +44,16 @@ export default function Reports({
         const sign = change.isPositive ? '+' : '-';
         return `${sign}${change.percentage}%`;
     };
+
+    // Group monthly data by year for rowspan
+    const groupedMonthlyData = monthlyData ? monthlyData.reduce((acc, month) => {
+        const year = month.year;
+        if (!acc[year]) {
+            acc[year] = [];
+        }
+        acc[year].push(month);
+        return acc;
+    }, {}) : {};
 
     return (
         <AuthenticatedLayout
@@ -90,38 +105,83 @@ export default function Reports({
                                         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
                                             Current Month: {currentMonth}
                                         </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                            {/* Income Section */}
                                             <div>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Month Income</p>
-                                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                                    {formatCurrency(currentMonthIncome)}
-                                                </p>
+                                                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Income</h4>
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Month</p>
+                                                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                                            {formatCurrency(currentMonthIncome || 0)}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Previous Month ({previousMonth})</p>
+                                                        <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                                                            {formatCurrency(previousMonthIncome || 0)}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Change</p>
+                                                        <div className="flex items-center gap-2">
+                                                            {incomeChange.isZero ? (
+                                                                <Minus className="w-6 h-6 text-gray-500" />
+                                                            ) : incomeChange.isPositive ? (
+                                                                <TrendingUp className="w-6 h-6 text-green-500" />
+                                                            ) : (
+                                                                <TrendingDown className="w-6 h-6 text-red-500" />
+                                                            )}
+                                                            <p className={`text-2xl font-bold ${
+                                                                incomeChange.isZero 
+                                                                    ? 'text-gray-500' 
+                                                                    : incomeChange.isPositive 
+                                                                        ? 'text-green-600 dark:text-green-400' 
+                                                                        : 'text-red-600 dark:text-red-400'
+                                                            }`}>
+                                                                {formatPercentage(incomeChange)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
+                                            {/* Expenditure Section */}
                                             <div>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Previous Month ({previousMonth})</p>
-                                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                                    {formatCurrency(previousMonthIncome)}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Change</p>
-                                                <div className="flex items-center gap-2">
-                                                    {incomeChange.isZero ? (
-                                                        <Minus className="w-6 h-6 text-gray-500" />
-                                                    ) : incomeChange.isPositive ? (
-                                                        <TrendingUp className="w-6 h-6 text-green-500" />
-                                                    ) : (
-                                                        <TrendingDown className="w-6 h-6 text-red-500" />
-                                                    )}
-                                                    <p className={`text-2xl font-bold ${
-                                                        incomeChange.isZero 
-                                                            ? 'text-gray-500' 
-                                                            : incomeChange.isPositive 
-                                                                ? 'text-green-600 dark:text-green-400' 
-                                                                : 'text-red-600 dark:text-red-400'
-                                                    }`}>
-                                                        {formatPercentage(incomeChange)}
-                                                    </p>
+                                                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Expenditure</h4>
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Month</p>
+                                                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                                                            {formatCurrency(currentMonthExpenditure || 0)}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Previous Month ({previousMonth})</p>
+                                                        <p className="text-xl font-bold text-red-600 dark:text-red-400">
+                                                            {formatCurrency(previousMonthExpenditure || 0)}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Change</p>
+                                                        <div className="flex items-center gap-2">
+                                                            {expenditureChange?.isZero ? (
+                                                                <Minus className="w-6 h-6 text-gray-500" />
+                                                            ) : expenditureChange?.isPositive ? (
+                                                                <TrendingUp className="w-6 h-6 text-red-500" />
+                                                            ) : (
+                                                                <TrendingDown className="w-6 h-6 text-green-500" />
+                                                            )}
+                                                            <p className={`text-2xl font-bold ${
+                                                                expenditureChange?.isZero 
+                                                                    ? 'text-gray-500' 
+                                                                    : expenditureChange?.isPositive 
+                                                                        ? 'text-red-600 dark:text-red-400' 
+                                                                        : 'text-green-600 dark:text-green-400'
+                                                            }`}>
+                                                                {formatPercentage(expenditureChange || { isZero: true, percentage: 0, isPositive: false })}
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -132,6 +192,9 @@ export default function Reports({
                                         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                                             <thead className="bg-gray-50 dark:bg-gray-700">
                                                 <tr>
+                                                    <th className="px-4 py-3 text-center text-base font-bold uppercase tracking-wider text-gray-500 dark:text-gray-300 border-r-2 border-gray-300 dark:border-gray-600" style={{ maxWidth: '80px', width: '80px' }}>
+                                                        Year
+                                                    </th>
                                                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
                                                         Month
                                                     </th>
@@ -139,47 +202,82 @@ export default function Reports({
                                                         Income
                                                     </th>
                                                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                                                        Previous Month Income
+                                                        Income Change
                                                     </th>
                                                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                                                        Change
+                                                        Expenditure
+                                                    </th>
+                                                    <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                                                        Expenditure Change
                                                     </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="bg-white divide-y divide-gray-200 dark:divide-gray-700 dark:bg-gray-800">
-                                                {monthlyData && monthlyData.map((month, index) => (
-                                                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                            {month.month}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                                            {formatCurrency(month.income)}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                                                            {formatCurrency(month.previousIncome)}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                                                            <div className="flex items-center justify-end gap-2">
-                                                                {month.change.isZero ? (
-                                                                    <Minus className="w-4 h-4 text-gray-500" />
-                                                                ) : month.change.isPositive ? (
-                                                                    <TrendingUp className="w-4 h-4 text-green-500" />
-                                                                ) : (
-                                                                    <TrendingDown className="w-4 h-4 text-red-500" />
-                                                                )}
-                                                                <span className={`font-medium ${
-                                                                    month.change.isZero 
-                                                                        ? 'text-gray-500' 
-                                                                        : month.change.isPositive 
-                                                                            ? 'text-green-600 dark:text-green-400' 
-                                                                            : 'text-red-600 dark:text-red-400'
-                                                                }`}>
-                                                                    {formatPercentage(month.change)}
-                                                                </span>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                ))}
+                                                {Object.keys(groupedMonthlyData).sort((a, b) => b - a).map((year) => {
+                                                    const months = groupedMonthlyData[year];
+                                                    return months.map((month, monthIndex) => (
+                                                        <tr key={`${year}-${monthIndex}`} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                                            {monthIndex === 0 && (
+                                                                <td 
+                                                                    rowSpan={months.length}
+                                                                    className="px-4 py-4 whitespace-nowrap text-base font-bold text-gray-900 dark:text-gray-100 align-middle border-r-2 border-gray-300 dark:border-gray-600 text-center"
+                                                                    style={{ maxWidth: '80px', width: '80px' }}
+                                                                >
+                                                                    {year}
+                                                                </td>
+                                                            )}
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                                {month.month}
+                                                            </td>
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${month.income && month.income > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'} font-semibold`}>
+                                                                {formatCurrency(month.income || 0)}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    {month.incomeChange?.isZero ? (
+                                                                        <Minus className="w-4 h-4 text-gray-500" />
+                                                                    ) : month.incomeChange?.isPositive ? (
+                                                                        <TrendingUp className="w-4 h-4 text-green-500" />
+                                                                    ) : (
+                                                                        <TrendingDown className="w-4 h-4 text-red-500" />
+                                                                    )}
+                                                                    <span className={`font-medium ${
+                                                                        month.incomeChange?.isZero 
+                                                                            ? 'text-gray-500' 
+                                                                            : month.incomeChange?.isPositive 
+                                                                                ? 'text-green-600 dark:text-green-400' 
+                                                                                : 'text-red-600 dark:text-red-400'
+                                                                    }`}>
+                                                                        {formatPercentage(month.incomeChange || { isZero: true, percentage: 0, isPositive: false })}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${month.expenditure && month.expenditure > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'} font-semibold`}>
+                                                                {formatCurrency(month.expenditure || 0)}
+                                                            </td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    {month.expenditureChange?.isZero ? (
+                                                                        <Minus className="w-4 h-4 text-gray-500" />
+                                                                    ) : month.expenditureChange?.isPositive ? (
+                                                                        <TrendingUp className="w-4 h-4 text-red-500" />
+                                                                    ) : (
+                                                                        <TrendingDown className="w-4 h-4 text-green-500" />
+                                                                    )}
+                                                                    <span className={`font-medium ${
+                                                                        month.expenditureChange?.isZero 
+                                                                            ? 'text-gray-500' 
+                                                                            : month.expenditureChange?.isPositive 
+                                                                                ? 'text-red-600 dark:text-red-400' 
+                                                                                : 'text-green-600 dark:text-green-400'
+                                                                    }`}>
+                                                                        {formatPercentage(month.expenditureChange || { isZero: true, percentage: 0, isPositive: false })}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ));
+                                                })}
                                             </tbody>
                                         </table>
                                     </div>
@@ -194,38 +292,83 @@ export default function Reports({
                                         <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
                                             Current Week: {currentWeek}
                                         </h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                            {/* Income Section */}
                                             <div>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Week Income</p>
-                                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                                    {formatCurrency(currentWeekIncome)}
-                                                </p>
+                                                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Income</h4>
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Week</p>
+                                                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                                                            {formatCurrency(currentWeekIncome || 0)}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Previous Week ({previousWeek})</p>
+                                                        <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                                                            {formatCurrency(previousWeekIncome || 0)}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Change</p>
+                                                        <div className="flex items-center gap-2">
+                                                            {incomeChange.isZero ? (
+                                                                <Minus className="w-6 h-6 text-gray-500" />
+                                                            ) : incomeChange.isPositive ? (
+                                                                <TrendingUp className="w-6 h-6 text-green-500" />
+                                                            ) : (
+                                                                <TrendingDown className="w-6 h-6 text-red-500" />
+                                                            )}
+                                                            <p className={`text-2xl font-bold ${
+                                                                incomeChange.isZero 
+                                                                    ? 'text-gray-500' 
+                                                                    : incomeChange.isPositive 
+                                                                        ? 'text-green-600 dark:text-green-400' 
+                                                                        : 'text-red-600 dark:text-red-400'
+                                                            }`}>
+                                                                {formatPercentage(incomeChange)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
+                                            {/* Expenditure Section */}
                                             <div>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Previous Week ({previousWeek})</p>
-                                                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                                                    {formatCurrency(previousWeekIncome)}
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Change</p>
-                                                <div className="flex items-center gap-2">
-                                                    {incomeChange.isZero ? (
-                                                        <Minus className="w-6 h-6 text-gray-500" />
-                                                    ) : incomeChange.isPositive ? (
-                                                        <TrendingUp className="w-6 h-6 text-green-500" />
-                                                    ) : (
-                                                        <TrendingDown className="w-6 h-6 text-red-500" />
-                                                    )}
-                                                    <p className={`text-2xl font-bold ${
-                                                        incomeChange.isZero 
-                                                            ? 'text-gray-500' 
-                                                            : incomeChange.isPositive 
-                                                                ? 'text-green-600 dark:text-green-400' 
-                                                                : 'text-red-600 dark:text-red-400'
-                                                    }`}>
-                                                        {formatPercentage(incomeChange)}
-                                                    </p>
+                                                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Expenditure</h4>
+                                                <div className="grid grid-cols-1 gap-4">
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Current Week</p>
+                                                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">
+                                                            {formatCurrency(currentWeekExpenditure || 0)}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Previous Week ({previousWeek})</p>
+                                                        <p className="text-xl font-bold text-red-600 dark:text-red-400">
+                                                            {formatCurrency(previousWeekExpenditure || 0)}
+                                                        </p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Change</p>
+                                                        <div className="flex items-center gap-2">
+                                                            {expenditureChange?.isZero ? (
+                                                                <Minus className="w-6 h-6 text-gray-500" />
+                                                            ) : expenditureChange?.isPositive ? (
+                                                                <TrendingUp className="w-6 h-6 text-green-500" />
+                                                            ) : (
+                                                                <TrendingDown className="w-6 h-6 text-red-500" />
+                                                            )}
+                                                            <p className={`text-2xl font-bold ${
+                                                                expenditureChange?.isZero 
+                                                                    ? 'text-gray-500' 
+                                                                    : expenditureChange?.isPositive 
+                                                                        ? 'text-green-600 dark:text-green-400' 
+                                                                        : 'text-red-600 dark:text-red-400'
+                                                            }`}>
+                                                                {formatPercentage(expenditureChange || { isZero: true, percentage: 0, isPositive: false })}
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -243,10 +386,13 @@ export default function Reports({
                                                         Income
                                                     </th>
                                                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                                                        Previous Week Income
+                                                        Income Change
                                                     </th>
                                                     <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
-                                                        Change
+                                                        Expenditure
+                                                    </th>
+                                                    <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-300">
+                                                        Expenditure Change
                                                     </th>
                                                 </tr>
                                             </thead>
@@ -256,29 +402,49 @@ export default function Reports({
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                                                             {week.week}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-900 dark:text-gray-100">
-                                                            {formatCurrency(week.income)}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-500 dark:text-gray-400">
-                                                            {formatCurrency(week.previousIncome)}
+                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${week.income && week.income > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'} font-semibold`}>
+                                                            {formatCurrency(week.income || 0)}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
                                                             <div className="flex items-center justify-end gap-2">
-                                                                {week.change.isZero ? (
+                                                                {week.incomeChange?.isZero ? (
                                                                     <Minus className="w-4 h-4 text-gray-500" />
-                                                                ) : week.change.isPositive ? (
+                                                                ) : week.incomeChange?.isPositive ? (
                                                                     <TrendingUp className="w-4 h-4 text-green-500" />
                                                                 ) : (
                                                                     <TrendingDown className="w-4 h-4 text-red-500" />
                                                                 )}
                                                                 <span className={`font-medium ${
-                                                                    week.change.isZero 
+                                                                    week.incomeChange?.isZero 
                                                                         ? 'text-gray-500' 
-                                                                        : week.change.isPositive 
+                                                                        : week.incomeChange?.isPositive 
                                                                             ? 'text-green-600 dark:text-green-400' 
                                                                             : 'text-red-600 dark:text-red-400'
                                                                 }`}>
-                                                                    {formatPercentage(week.change)}
+                                                                    {formatPercentage(week.incomeChange || { isZero: true, percentage: 0, isPositive: false })}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td className={`px-6 py-4 whitespace-nowrap text-sm text-right ${week.expenditure && week.expenditure > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'} font-semibold`}>
+                                                            {formatCurrency(week.expenditure || 0)}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                {week.expenditureChange?.isZero ? (
+                                                                    <Minus className="w-4 h-4 text-gray-500" />
+                                                                ) : week.expenditureChange?.isPositive ? (
+                                                                    <TrendingUp className="w-4 h-4 text-green-500" />
+                                                                ) : (
+                                                                    <TrendingDown className="w-4 h-4 text-red-500" />
+                                                                )}
+                                                                <span className={`font-medium ${
+                                                                    week.expenditureChange?.isZero 
+                                                                        ? 'text-gray-500' 
+                                                                        : week.expenditureChange?.isPositive 
+                                                                            ? 'text-green-600 dark:text-green-400' 
+                                                                            : 'text-red-600 dark:text-red-400'
+                                                                }`}>
+                                                                    {formatPercentage(week.expenditureChange || { isZero: true, percentage: 0, isPositive: false })}
                                                                 </span>
                                                             </div>
                                                         </td>

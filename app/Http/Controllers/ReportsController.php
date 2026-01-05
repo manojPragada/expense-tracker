@@ -31,12 +31,18 @@ class ReportsController extends Controller
         $currentMonth = Carbon::now()->startOfMonth();
         $previousMonth = $currentMonth->copy()->subMonth();
         
-        // Get current month income
+        // Get current month income and expenditure
         if ($driver === 'sqlite') {
             $currentMonthIncome = Income::whereRaw("strftime('%Y-%m', date) = ?", [$currentMonth->format('Y-m')])
                 ->sum('amount');
             
             $previousMonthIncome = Income::whereRaw("strftime('%Y-%m', date) = ?", [$previousMonth->format('Y-m')])
+                ->sum('amount');
+            
+            $currentMonthExpenditure = Expense::whereRaw("strftime('%Y-%m', date) = ?", [$currentMonth->format('Y-m')])
+                ->sum('amount');
+            
+            $previousMonthExpenditure = Expense::whereRaw("strftime('%Y-%m', date) = ?", [$previousMonth->format('Y-m')])
                 ->sum('amount');
         } else {
             $currentMonthIncome = Income::whereYear('date', $currentMonth->year)
@@ -46,10 +52,19 @@ class ReportsController extends Controller
             $previousMonthIncome = Income::whereYear('date', $previousMonth->year)
                 ->whereMonth('date', $previousMonth->month)
                 ->sum('amount');
+            
+            $currentMonthExpenditure = Expense::whereYear('date', $currentMonth->year)
+                ->whereMonth('date', $currentMonth->month)
+                ->sum('amount');
+            
+            $previousMonthExpenditure = Expense::whereYear('date', $previousMonth->year)
+                ->whereMonth('date', $previousMonth->month)
+                ->sum('amount');
         }
         
-        // Calculate percentage change
+        // Calculate percentage changes
         $incomeChange = $this->calculatePercentageChange($previousMonthIncome, $currentMonthIncome);
+        $expenditureChange = $this->calculatePercentageChange($previousMonthExpenditure, $currentMonthExpenditure);
         
         // Get monthly data for the last 12 months
         $monthlyData = $this->getMonthlyData(12);
@@ -61,6 +76,9 @@ class ReportsController extends Controller
             'currentMonthIncome' => (float) $currentMonthIncome,
             'previousMonthIncome' => (float) $previousMonthIncome,
             'incomeChange' => $incomeChange,
+            'currentMonthExpenditure' => (float) $currentMonthExpenditure,
+            'previousMonthExpenditure' => (float) $previousMonthExpenditure,
+            'expenditureChange' => $expenditureChange,
             'monthlyData' => $monthlyData,
         ]);
     }
@@ -75,12 +93,18 @@ class ReportsController extends Controller
         $previousWeekStart = $currentWeekStart->copy()->subWeek();
         $previousWeekEnd = $previousWeekStart->copy()->endOfWeek();
         
-        // Get current week income
+        // Get current week income and expenditure
         if ($driver === 'sqlite') {
             $currentWeekIncome = Income::whereBetween('date', [$currentWeekStart->toDateString(), $currentWeekEnd->toDateString()])
                 ->sum('amount');
             
             $previousWeekIncome = Income::whereBetween('date', [$previousWeekStart->toDateString(), $previousWeekEnd->toDateString()])
+                ->sum('amount');
+            
+            $currentWeekExpenditure = Expense::whereBetween('date', [$currentWeekStart->toDateString(), $currentWeekEnd->toDateString()])
+                ->sum('amount');
+            
+            $previousWeekExpenditure = Expense::whereBetween('date', [$previousWeekStart->toDateString(), $previousWeekEnd->toDateString()])
                 ->sum('amount');
         } else {
             $currentWeekIncome = Income::whereBetween('date', [$currentWeekStart, $currentWeekEnd])
@@ -88,10 +112,17 @@ class ReportsController extends Controller
             
             $previousWeekIncome = Income::whereBetween('date', [$previousWeekStart, $previousWeekEnd])
                 ->sum('amount');
+            
+            $currentWeekExpenditure = Expense::whereBetween('date', [$currentWeekStart, $currentWeekEnd])
+                ->sum('amount');
+            
+            $previousWeekExpenditure = Expense::whereBetween('date', [$previousWeekStart, $previousWeekEnd])
+                ->sum('amount');
         }
         
-        // Calculate percentage change
+        // Calculate percentage changes
         $incomeChange = $this->calculatePercentageChange($previousWeekIncome, $currentWeekIncome);
+        $expenditureChange = $this->calculatePercentageChange($previousWeekExpenditure, $currentWeekExpenditure);
         
         // Get weekly data for the last 12 weeks
         $weeklyData = $this->getWeeklyData(12);
@@ -103,6 +134,9 @@ class ReportsController extends Controller
             'currentWeekIncome' => (float) $currentWeekIncome,
             'previousWeekIncome' => (float) $previousWeekIncome,
             'incomeChange' => $incomeChange,
+            'currentWeekExpenditure' => (float) $currentWeekExpenditure,
+            'previousWeekExpenditure' => (float) $previousWeekExpenditure,
+            'expenditureChange' => $expenditureChange,
             'weeklyData' => $weeklyData,
         ]);
     }
@@ -149,6 +183,12 @@ class ReportsController extends Controller
                 
                 $prevMonthIncome = Income::whereRaw("strftime('%Y-%m', date) = ?", [$previousMonth->format('Y-m')])
                     ->sum('amount');
+                
+                $monthExpenditure = Expense::whereRaw("strftime('%Y-%m', date) = ?", [$month->format('Y-m')])
+                    ->sum('amount');
+                
+                $prevMonthExpenditure = Expense::whereRaw("strftime('%Y-%m', date) = ?", [$previousMonth->format('Y-m')])
+                    ->sum('amount');
             } else {
                 $monthIncome = Income::whereYear('date', $month->year)
                     ->whereMonth('date', $month->month)
@@ -157,19 +197,33 @@ class ReportsController extends Controller
                 $prevMonthIncome = Income::whereYear('date', $previousMonth->year)
                     ->whereMonth('date', $previousMonth->month)
                     ->sum('amount');
+                
+                $monthExpenditure = Expense::whereYear('date', $month->year)
+                    ->whereMonth('date', $month->month)
+                    ->sum('amount');
+                
+                $prevMonthExpenditure = Expense::whereYear('date', $previousMonth->year)
+                    ->whereMonth('date', $previousMonth->month)
+                    ->sum('amount');
             }
             
-            $change = $this->calculatePercentageChange($prevMonthIncome, $monthIncome);
+            $incomeChange = $this->calculatePercentageChange($prevMonthIncome, $monthIncome);
+            $expenditureChange = $this->calculatePercentageChange($prevMonthExpenditure, $monthExpenditure);
             
             $data[] = [
-                'month' => $month->format('F Y'),
+                'year' => $month->format('Y'),
+                'month' => $month->format('F'),
+                'monthYear' => $month->format('Y F'),
                 'income' => (float) $monthIncome,
                 'previousIncome' => (float) $prevMonthIncome,
-                'change' => $change,
+                'incomeChange' => $incomeChange,
+                'expenditure' => (float) $monthExpenditure,
+                'previousExpenditure' => (float) $prevMonthExpenditure,
+                'expenditureChange' => $expenditureChange,
             ];
         }
         
-        return array_reverse($data);
+        return $data;
     }
 
     protected function getWeeklyData($weeks = 12): array
@@ -190,24 +244,40 @@ class ReportsController extends Controller
                 
                 $prevWeekIncome = Income::whereBetween('date', [$previousWeekStart->toDateString(), $previousWeekEnd->toDateString()])
                     ->sum('amount');
+                
+                $weekExpenditure = Expense::whereBetween('date', [$weekStart->toDateString(), $weekEnd->toDateString()])
+                    ->sum('amount');
+                
+                $prevWeekExpenditure = Expense::whereBetween('date', [$previousWeekStart->toDateString(), $previousWeekEnd->toDateString()])
+                    ->sum('amount');
             } else {
                 $weekIncome = Income::whereBetween('date', [$weekStart, $weekEnd])
                     ->sum('amount');
                 
                 $prevWeekIncome = Income::whereBetween('date', [$previousWeekStart, $previousWeekEnd])
                     ->sum('amount');
+                
+                $weekExpenditure = Expense::whereBetween('date', [$weekStart, $weekEnd])
+                    ->sum('amount');
+                
+                $prevWeekExpenditure = Expense::whereBetween('date', [$previousWeekStart, $previousWeekEnd])
+                    ->sum('amount');
             }
             
-            $change = $this->calculatePercentageChange($prevWeekIncome, $weekIncome);
+            $incomeChange = $this->calculatePercentageChange($prevWeekIncome, $weekIncome);
+            $expenditureChange = $this->calculatePercentageChange($prevWeekExpenditure, $weekExpenditure);
             
             $data[] = [
                 'week' => $weekStart->format('M d') . ' - ' . $weekEnd->format('M d, Y'),
                 'income' => (float) $weekIncome,
                 'previousIncome' => (float) $prevWeekIncome,
-                'change' => $change,
+                'incomeChange' => $incomeChange,
+                'expenditure' => (float) $weekExpenditure,
+                'previousExpenditure' => (float) $prevWeekExpenditure,
+                'expenditureChange' => $expenditureChange,
             ];
         }
         
-        return array_reverse($data);
+        return $data;
     }
 }
