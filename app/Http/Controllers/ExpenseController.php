@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Expense;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ExpenseController extends Controller
@@ -38,7 +39,12 @@ class ExpenseController extends Controller
             $validated['last_generated_at'] = null;
         }
 
-        Expense::create($validated);
+        $expense = Expense::create($validated);
+
+        // If recurring, generate all pending entries up to today immediately
+        if ($expense->is_recurring && $expense->is_recurring_active) {
+            $this->generatePendingEntries($expense);
+        }
 
         return redirect()->route('submissions', ['type' => 'expenses'])->with('success', 'Expense created successfully.');
     }
@@ -100,5 +106,57 @@ class ExpenseController extends Controller
         $parent->update(['is_recurring_active' => false]);
 
         return redirect()->route('submissions', ['type' => 'expenses'])->with('success', 'Recurring expense subscription cancelled successfully.');
+    }
+
+    /**
+     * Generate all pending child entries up to today
+     */
+    protected function generatePendingEntries(Expense $parent): void
+    {
+        $lastGenerated = $parent->last_generated_at 
+            ? Carbon::parse($parent->last_generated_at)->startOfDay() 
+            : Carbon::parse($parent->date)->startOfDay();
+        $today = Carbon::today()->startOfDay();
+
+        // Generate all missed entries up to today
+        while (true) {
+            $nextDate = $parent->calculateNextDate($lastGenerated)->startOfDay();
+
+            // Stop if next date is in the future
+            if ($nextDate->isAfter($today)) {
+                break;
+            }
+
+            // Stop if past end date
+            if ($parent->recurring_end_date && $nextDate->isAfter(Carbon::parse($parent->recurring_end_date)->startOfDay())) {
+                // Deactivate the recurring entry
+                $parent->update(['is_recurring_active' => false]);
+                break;
+            }
+
+            // Create child entry
+            $childData = $parent->only([
+                'user_id',
+                'item',
+                'amount',
+                'category_id',
+                'description',
+            ]);
+
+            $childData['date'] = $nextDate->toDateString();
+            $childData['parent_id'] = $parent->id;
+            $childData['is_recurring'] = false;
+            $childData['recurring_frequency'] = null;
+            $childData['recurring_end_date'] = null;
+            $childData['is_recurring_active'] = false;
+            $childData['last_generated_at'] = null;
+
+            Expense::create($childData);
+
+            $lastGenerated = $nextDate;
+        }
+
+        // Update parent's last_generated_at
+        $parent->update(['last_generated_at' => $lastGenerated->toDateString()]);
     }
 }

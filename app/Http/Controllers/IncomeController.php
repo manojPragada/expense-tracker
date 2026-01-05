@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Income;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -39,7 +40,12 @@ class IncomeController extends Controller
             $validated['last_generated_at'] = null;
         }
 
-        Income::create($validated);
+        $income = Income::create($validated);
+
+        // If recurring, generate all pending entries up to today immediately
+        if ($income->is_recurring && $income->is_recurring_active) {
+            $this->generatePendingEntries($income);
+        }
 
         return redirect()->route('submissions', ['type' => 'incomes'])->with('success', 'Income created successfully.');
     }
@@ -100,5 +106,56 @@ class IncomeController extends Controller
         $parent->update(['is_recurring_active' => false]);
 
         return redirect()->route('submissions', ['type' => 'incomes'])->with('success', 'Recurring income subscription cancelled successfully.');
+    }
+
+    /**
+     * Generate all pending child entries up to today
+     */
+    protected function generatePendingEntries(Income $parent): void
+    {
+        $lastGenerated = $parent->last_generated_at 
+            ? Carbon::parse($parent->last_generated_at)->startOfDay() 
+            : Carbon::parse($parent->date)->startOfDay();
+        $today = Carbon::today()->startOfDay();
+
+        // Generate all missed entries up to today
+        while (true) {
+            $nextDate = $parent->calculateNextDate($lastGenerated)->startOfDay();
+
+            // Stop if next date is in the future
+            if ($nextDate->isAfter($today)) {
+                break;
+            }
+
+            // Stop if past end date
+            if ($parent->recurring_end_date && $nextDate->isAfter(Carbon::parse($parent->recurring_end_date)->startOfDay())) {
+                // Deactivate the recurring entry
+                $parent->update(['is_recurring_active' => false]);
+                break;
+            }
+
+            // Create child entry
+            $childData = $parent->only([
+                'user_id',
+                'income_source',
+                'amount',
+                'description',
+            ]);
+
+            $childData['date'] = $nextDate->toDateString();
+            $childData['parent_id'] = $parent->id;
+            $childData['is_recurring'] = false;
+            $childData['recurring_frequency'] = null;
+            $childData['recurring_end_date'] = null;
+            $childData['is_recurring_active'] = false;
+            $childData['last_generated_at'] = null;
+
+            Income::create($childData);
+
+            $lastGenerated = $nextDate;
+        }
+
+        // Update parent's last_generated_at
+        $parent->update(['last_generated_at' => $lastGenerated->toDateString()]);
     }
 }
