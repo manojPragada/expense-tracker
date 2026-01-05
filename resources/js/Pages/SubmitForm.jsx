@@ -20,6 +20,9 @@ export default function SubmitForm({ users, categories }) {
         amount: '',
         category_id: categories[0]?.id || '',
         description: '',
+        is_recurring: false,
+        recurring_frequency: 'monthly',
+        recurring_end_date: '',
     });
 
     const incomeForm = useForm({
@@ -28,6 +31,9 @@ export default function SubmitForm({ users, categories }) {
         income_source: 'Work',
         amount: '',
         description: '',
+        is_recurring: false,
+        recurring_frequency: 'monthly',
+        recurring_end_date: '',
     });
 
     const submitExpense = (e) => {
@@ -189,6 +195,60 @@ export default function SubmitForm({ users, categories }) {
                                             <InputError message={expenseForm.errors.description} className="mt-2" />
                                         </div>
 
+                                        {/* Recurring Payment Section */}
+                                        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                            <div className="flex items-center mb-3">
+                                                <input
+                                                    id="expense_is_recurring"
+                                                    type="checkbox"
+                                                    checked={expenseForm.data.is_recurring}
+                                                    onChange={(e) => expenseForm.setData('is_recurring', e.target.checked)}
+                                                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900"
+                                                />
+                                                <label htmlFor="expense_is_recurring" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Recurring Payment
+                                                </label>
+                                            </div>
+
+                                            {expenseForm.data.is_recurring && (
+                                                <div className="space-y-4 pl-6 border-l-2 border-indigo-200 dark:border-indigo-800">
+                                                    <div>
+                                                        <InputLabel htmlFor="expense_recurring_frequency" value="Frequency" />
+                                                        <select
+                                                            id="expense_recurring_frequency"
+                                                            value={expenseForm.data.recurring_frequency}
+                                                            onChange={(e) => expenseForm.setData('recurring_frequency', e.target.value)}
+                                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                                            required={expenseForm.data.is_recurring}
+                                                        >
+                                                            <option value="daily">Daily</option>
+                                                            <option value="weekly">Weekly</option>
+                                                            <option value="bi-weekly">Bi-Weekly</option>
+                                                            <option value="monthly">Monthly</option>
+                                                            <option value="yearly">Yearly</option>
+                                                        </select>
+                                                        <InputError message={expenseForm.errors.recurring_frequency} className="mt-2" />
+                                                    </div>
+
+                                                    <div>
+                                                        <InputLabel htmlFor="expense_recurring_end_date" value="End Date (Optional)" />
+                                                        <TextInput
+                                                            id="expense_recurring_end_date"
+                                                            type="date"
+                                                            value={expenseForm.data.recurring_end_date}
+                                                            onChange={(e) => expenseForm.setData('recurring_end_date', e.target.value)}
+                                                            className="mt-1 block w-full"
+                                                            onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                                                        />
+                                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                            Leave empty for indefinite recurring payment
+                                                        </p>
+                                                        <InputError message={expenseForm.errors.recurring_end_date} className="mt-2" />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <div className="flex items-center gap-4">
                                             <PrimaryButton disabled={expenseForm.processing}>
                                                 Submit
@@ -273,6 +333,60 @@ export default function SubmitForm({ users, categories }) {
                                                 rows="3"
                                             />
                                             <InputError message={incomeForm.errors.description} className="mt-2" />
+                                        </div>
+
+                                        {/* Recurring Payment Section */}
+                                        <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                                            <div className="flex items-center mb-3">
+                                                <input
+                                                    id="income_is_recurring"
+                                                    type="checkbox"
+                                                    checked={incomeForm.data.is_recurring}
+                                                    onChange={(e) => incomeForm.setData('is_recurring', e.target.checked)}
+                                                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900"
+                                                />
+                                                <label htmlFor="income_is_recurring" className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                    Recurring Income
+                                                </label>
+                                            </div>
+
+                                            {incomeForm.data.is_recurring && (
+                                                <div className="space-y-4 pl-6 border-l-2 border-indigo-200 dark:border-indigo-800">
+                                                    <div>
+                                                        <InputLabel htmlFor="income_recurring_frequency" value="Frequency" />
+                                                        <select
+                                                            id="income_recurring_frequency"
+                                                            value={incomeForm.data.recurring_frequency}
+                                                            onChange={(e) => incomeForm.setData('recurring_frequency', e.target.value)}
+                                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                                            required={incomeForm.data.is_recurring}
+                                                        >
+                                                            <option value="daily">Daily</option>
+                                                            <option value="weekly">Weekly</option>
+                                                            <option value="bi-weekly">Bi-Weekly</option>
+                                                            <option value="monthly">Monthly</option>
+                                                            <option value="yearly">Yearly</option>
+                                                        </select>
+                                                        <InputError message={incomeForm.errors.recurring_frequency} className="mt-2" />
+                                                    </div>
+
+                                                    <div>
+                                                        <InputLabel htmlFor="income_recurring_end_date" value="End Date (Optional)" />
+                                                        <TextInput
+                                                            id="income_recurring_end_date"
+                                                            type="date"
+                                                            value={incomeForm.data.recurring_end_date}
+                                                            onChange={(e) => incomeForm.setData('recurring_end_date', e.target.value)}
+                                                            className="mt-1 block w-full"
+                                                            onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                                                        />
+                                                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                            Leave empty for indefinite recurring income
+                                                        </p>
+                                                        <InputError message={incomeForm.errors.recurring_end_date} className="mt-2" />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
 
                                         <div className="flex items-center gap-4">

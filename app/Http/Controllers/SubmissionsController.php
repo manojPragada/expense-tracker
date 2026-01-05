@@ -14,8 +14,18 @@ class SubmissionsController extends Controller
 {
     public function index(): Response
     {
-        $expenses = Expense::with(['user', 'category'])->orderBy('date', 'desc')->get();
-        $incomes = Income::with('user')->orderBy('date', 'desc')->get();
+        $expenses = Expense::with(['user', 'category', 'parent'])->orderBy('date', 'desc')->get()->map(function ($expense) {
+            $expense->date = $expense->date ? $expense->date->format('Y-m-d') : null;
+            $expense->recurring_end_date = $expense->recurring_end_date ? $expense->recurring_end_date->format('Y-m-d') : null;
+            return $expense;
+        });
+        
+        $incomes = Income::with(['user', 'parent'])->orderBy('date', 'desc')->get()->map(function ($income) {
+            $income->date = $income->date ? $income->date->format('Y-m-d') : null;
+            $income->recurring_end_date = $income->recurring_end_date ? $income->recurring_end_date->format('Y-m-d') : null;
+            return $income;
+        });
+        
         $users = User::all();
         $categories = Category::orderBy('order')->get();
         

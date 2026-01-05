@@ -15,6 +15,7 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
     const [editingExpense, setEditingExpense] = useState(null);
     const [editingIncome, setEditingIncome] = useState(null);
     const [deleteDialog, setDeleteDialog] = useState({ show: false, type: null, id: null, name: '' });
+    const [cancelRecurringDialog, setCancelRecurringDialog] = useState({ show: false, type: null, id: null, name: '' });
     const [activeTab, setActiveTab] = useState(initialTab);
 
     // Update URL when tab changes
@@ -34,6 +35,9 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
         amount: '',
         category_id: '',
         description: '',
+        is_recurring: false,
+        recurring_frequency: 'monthly',
+        recurring_end_date: '',
     });
 
     const incomeForm = useForm({
@@ -42,17 +46,23 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
         income_source: '',
         amount: '',
         description: '',
+        is_recurring: false,
+        recurring_frequency: 'monthly',
+        recurring_end_date: '',
     });
 
     const startEditExpense = (expense) => {
         setEditingExpense(expense.id);
         expenseForm.setData({
             user_id: expense.user_id,
-            date: expense.date,
+            date: formatDateForInput(expense.date),
             item: expense.item,
             amount: expense.amount,
             category_id: expense.category_id,
             description: expense.description || '',
+            is_recurring: expense.is_recurring || false,
+            recurring_frequency: expense.recurring_frequency || 'monthly',
+            recurring_end_date: formatDateForInput(expense.recurring_end_date),
         });
     };
 
@@ -60,10 +70,13 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
         setEditingIncome(income.id);
         incomeForm.setData({
             user_id: income.user_id,
-            date: income.date,
+            date: formatDateForInput(income.date),
             income_source: income.income_source,
             amount: income.amount,
             description: income.description || '',
+            is_recurring: income.is_recurring || false,
+            recurring_frequency: income.recurring_frequency || 'monthly',
+            recurring_end_date: formatDateForInput(income.recurring_end_date),
         });
     };
 
@@ -90,6 +103,31 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
                 cancelEdit();
             },
         });
+    };
+
+    const confirmCancelRecurring = () => {
+        const route_name = cancelRecurringDialog.type === 'expense' ? 'expenses.cancel-recurring' : 'incomes.cancel-recurring';
+        
+        expenseForm.post(route(route_name, cancelRecurringDialog.id), {
+            onSuccess: () => {
+                setCancelRecurringDialog({ show: false, type: null, id: null, name: '' });
+            },
+        });
+    };
+
+    const formatDateForInput = (dateValue) => {
+        if (!dateValue) return '';
+        // If it's already in YYYY-MM-DD format, return as is
+        if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+            return dateValue;
+        }
+        // Otherwise, parse it
+        const date = new Date(dateValue);
+        if (isNaN(date.getTime())) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     };
 
     const formatDate = (dateString) => {
@@ -206,13 +244,14 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
                                                                     </div>
                                                                     <div>
                                                                         <InputLabel htmlFor={`expense_date_${expense.id}`} value="Date" />
-                                                                        <TextInput
+                                                                        <input
                                                                             id={`expense_date_${expense.id}`}
                                                                             type="date"
-                                                                            value={expenseForm.data.date}
+                                                                            value={expenseForm.data.date || ''}
                                                                             onChange={(e) => expenseForm.setData('date', e.target.value)}
                                                                             onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                                                                            className="mt-1 block w-full cursor-pointer"
+                                                                            className="mt-1 block w-full cursor-pointer rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                                                            required
                                                                         />
                                                                         <InputError message={expenseForm.errors.date} className="mt-2" />
                                                                     </div>
@@ -293,7 +332,38 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
                                                                 {formatDate(expense.date)}
                                                             </td>
                                                             <td className="whitespace-nowrap px-6 py-4 text-sm">
-                                                                {expense.item}
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <span>{expense.item}</span>
+                                                                    {/* Parent entries: Always show Recurring badge */}
+                                                                    {expense.is_recurring && !expense.parent_id && (
+                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                                            Recurring ({expense.recurring_frequency})
+                                                                        </span>
+                                                                    )}
+                                                                    {/* Child entries: Show Generated badge */}
+                                                                    {expense.parent_id && (
+                                                                        <>
+                                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                                                Recurring ({expense.parent?.recurring_frequency || expenses[expense.parent_id]?.recurring_frequency})
+                                                                            </span>
+                                                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                                                Generated
+                                                                            </span>
+                                                                        </>
+                                                                    )}
+                                                                    {/* Show Cancelled badge if parent is cancelled (for child entries) */}
+                                                                    {expense.parent_id && expense.parent && !expense.parent.is_recurring_active && (
+                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                                                            Cancelled
+                                                                        </span>
+                                                                    )}
+                                                                    {/* Show Cancelled badge if parent entry is cancelled */}
+                                                                    {expense.is_recurring && !expense.parent_id && !expense.is_recurring_active && (
+                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                                                            Cancelled
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </td>
                                                             <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
                                                                 ${parseFloat(expense.amount).toFixed(2)}
@@ -334,6 +404,38 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
                                                                     >
                                                                         Delete
                                                                     </button>
+                                                                    {expense.is_recurring && !expense.parent_id && expense.is_recurring_active && (
+                                                                        <>
+                                                                            <span className="text-gray-300 dark:text-gray-600">|</span>
+                                                                            <button
+                                                                                onClick={() => setCancelRecurringDialog({
+                                                                                    show: true,
+                                                                                    type: 'expense',
+                                                                                    id: expense.id,
+                                                                                    name: expense.item
+                                                                                })}
+                                                                                className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
+                                                                            >
+                                                                                Cancel Subscription
+                                                                            </button>
+                                                                        </>
+                                                                    )}
+                                                                    {expense.parent_id && expense.parent && expense.parent.is_recurring_active && (
+                                                                        <>
+                                                                            <span className="text-gray-300 dark:text-gray-600">|</span>
+                                                                            <button
+                                                                                onClick={() => setCancelRecurringDialog({
+                                                                                    show: true,
+                                                                                    type: 'expense',
+                                                                                    id: expense.parent.id,
+                                                                                    name: expense.parent.item || expense.item
+                                                                                })}
+                                                                                className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
+                                                                            >
+                                                                                Cancel Subscription
+                                                                            </button>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             </td>
                                                         </>
@@ -366,13 +468,14 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
                                                                     </div>
                                                                     <div>
                                                                         <InputLabel htmlFor={`income_date_${income.id}`} value="Date" />
-                                                                        <TextInput
+                                                                        <input
                                                                             id={`income_date_${income.id}`}
                                                                             type="date"
-                                                                            value={incomeForm.data.date}
+                                                                            value={incomeForm.data.date || ''}
                                                                             onChange={(e) => incomeForm.setData('date', e.target.value)}
                                                                             onClick={(e) => e.target.showPicker && e.target.showPicker()}
-                                                                            className="mt-1 block w-full cursor-pointer"
+                                                                            className="mt-1 block w-full cursor-pointer rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300"
+                                                                            required
                                                                         />
                                                                         <InputError message={incomeForm.errors.date} className="mt-2" />
                                                                     </div>
@@ -439,7 +542,33 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
                                                                 {formatDate(income.date)}
                                                             </td>
                                                             <td className="whitespace-nowrap px-6 py-4 text-sm">
-                                                                {income.income_source}
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <span>{income.income_source}</span>
+                                                                    {/* Parent entries: Always show Recurring badge */}
+                                                                    {income.is_recurring && !income.parent_id && (
+                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                                                            Recurring ({income.recurring_frequency})
+                                                                        </span>
+                                                                    )}
+                                                                    {/* Child entries: Show Generated badge */}
+                                                                    {income.parent_id && (
+                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                                                                            Generated
+                                                                        </span>
+                                                                    )}
+                                                                    {/* Show Cancelled badge if parent is cancelled (for child entries) */}
+                                                                    {income.parent_id && income.parent && !income.parent.is_recurring_active && (
+                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                                                            Cancelled
+                                                                        </span>
+                                                                    )}
+                                                                    {/* Show Cancelled badge if parent entry is cancelled */}
+                                                                    {income.is_recurring && !income.parent_id && !income.is_recurring_active && (
+                                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                                                            Cancelled
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </td>
                                                             <td className="whitespace-nowrap px-6 py-4 text-sm font-medium">
                                                                 ${parseFloat(income.amount).toFixed(2)}
@@ -467,6 +596,38 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
                                                                     >
                                                                         Delete
                                                                     </button>
+                                                                    {income.is_recurring && !income.parent_id && income.is_recurring_active && (
+                                                                        <>
+                                                                            <span className="text-gray-300 dark:text-gray-600">|</span>
+                                                                            <button
+                                                                                onClick={() => setCancelRecurringDialog({
+                                                                                    show: true,
+                                                                                    type: 'income',
+                                                                                    id: income.id,
+                                                                                    name: income.income_source
+                                                                                })}
+                                                                                className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
+                                                                            >
+                                                                                Cancel Subscription
+                                                                            </button>
+                                                                        </>
+                                                                    )}
+                                                                    {income.parent_id && income.parent && income.parent.is_recurring_active && (
+                                                                        <>
+                                                                            <span className="text-gray-300 dark:text-gray-600">|</span>
+                                                                            <button
+                                                                                onClick={() => setCancelRecurringDialog({
+                                                                                    show: true,
+                                                                                    type: 'income',
+                                                                                    id: income.parent.id,
+                                                                                    name: income.parent.income_source || income.income_source
+                                                                                })}
+                                                                                className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-300"
+                                                                            >
+                                                                                Cancel Subscription
+                                                                            </button>
+                                                                        </>
+                                                                    )}
                                                                 </div>
                                                             </td>
                                                         </>
@@ -499,6 +660,16 @@ export default function ViewSubmissions({ expenses, incomes, users, categories }
                         });
                     }
                 }}
+                isProcessing={expenseForm.processing || incomeForm.processing}
+            />
+
+            {/* Cancel Recurring Confirmation Dialog */}
+            <DeleteConfirmationDialog
+                show={cancelRecurringDialog.show}
+                title={`Cancel Recurring ${cancelRecurringDialog.type === 'expense' ? 'Expense' : 'Income'}`}
+                message={`Are you sure you want to cancel the recurring subscription for "${cancelRecurringDialog.name}"? Future entries will no longer be generated automatically.`}
+                onClose={() => setCancelRecurringDialog({ show: false, type: null, id: null, name: '' })}
+                onConfirm={confirmCancelRecurring}
                 isProcessing={expenseForm.processing || incomeForm.processing}
             />
         </AuthenticatedLayout>

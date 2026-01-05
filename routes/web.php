@@ -29,10 +29,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
     Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
     Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    Route::post('/expenses/{expense}/cancel-recurring', [ExpenseController::class, 'cancelRecurring'])->name('expenses.cancel-recurring');
     
     Route::post('/incomes', [IncomeController::class, 'store'])->name('incomes.store');
     Route::put('/incomes/{income}', [IncomeController::class, 'update'])->name('incomes.update');
     Route::delete('/incomes/{income}', [IncomeController::class, 'destroy'])->name('incomes.destroy');
+    Route::post('/incomes/{income}/cancel-recurring', [IncomeController::class, 'cancelRecurring'])->name('incomes.cancel-recurring');
     
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
