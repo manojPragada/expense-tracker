@@ -16,6 +16,7 @@ import {
     Menu,
     X,
     ChevronDown,
+    FileBarChart,
 } from "lucide-react";
 
 export default function AuthenticatedLayout({ header, children }) {
@@ -62,6 +63,11 @@ export default function AuthenticatedLayout({ header, children }) {
             name: "Weekly Overview",
             href: route("weekly-overview"),
             icon: <Calendar className="w-5 h-5" />,
+        },
+        {
+            name: "Reports",
+            href: route("reports"),
+            icon: <FileBarChart className="w-5 h-5" />,
         },
         {
             name: "Submit Income/Expense",
@@ -160,7 +166,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         >
                             <X className="w-6 h-6" />
                         </button>
-                    </div>
+                            </div>
 
                     {/* Navigation */}
                     <nav className="flex-1 px-1 py-6 space-y-2 overflow-y-auto overflow-x-visible">
@@ -273,7 +279,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                 />
                             </div>
                         </button>
-                    </div>
+                        </div>
 
                     {/* User Section */}
                     <div className="border-t-2 border-gray-300 dark:border-gray-700 py-2 px-3">
@@ -307,8 +313,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                                     .charAt(0)
                                                     .toUpperCase()}
                                             </span>
-                                        </div>
-                                    </div>
+                        </div>
+                    </div>
                                     {!sidebarCollapsed && (
                                         <div className="w-full flex items-center py-2">
                                             <div className="py-1 px-1">
@@ -318,7 +324,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 <p className="hidden text-xs text-gray-500 dark:text-gray-400 truncate">
                                                     {user.email}
                                                 </p>
-                                            </div>
+                </div>
                                             <ChevronDown
                                                 className={`w-5 h-5 text-gray-400 dark:text-gray-500 ml-auto transition-transform duration-200 ${
                                                     hoveredItem === "user"
@@ -326,17 +332,17 @@ export default function AuthenticatedLayout({ header, children }) {
                                                         : ""
                                                 }`}
                                             />
-                                        </div>
+                    </div>
                                     )}
                                     <div className="flex-1 min-w-0 lg:hidden">
                                         <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                            {user.name}
+                                {user.name}
                                         </p>
                                         <p className="hidden text-xs text-gray-500 dark:text-gray-400 truncate">
-                                            {user.email}
+                                {user.email}
                                         </p>
-                                    </div>
-                                </div>
+                            </div>
+                        </div>
                             </button>
 
                             {/* Dropdown Options - Inline */}
@@ -346,15 +352,15 @@ export default function AuthenticatedLayout({ header, children }) {
                                         href={route("profile.edit")}
                                         className="block w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
                                     >
-                                        Profile
+                                Profile
                                     </Link>
                                     <Link
                                         href={route("logout")}
-                                        method="post"
-                                        as="button"
+                                method="post"
+                                as="button"
                                         className="block w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
-                                    >
-                                        Log Out
+                            >
+                                Log Out
                                     </Link>
                                 </div>
                             )}
@@ -380,13 +386,13 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
 
                 {/* Page Header */}
-                {header && (
+            {header && (
                     <header className="bg-white dark:bg-gray-800 shadow-md border-b-2 border-gray-300 dark:border-gray-700">
                         <div className="mx-auto max-w-full px-4 py-6 sm:px-6 lg:px-8">
-                            {header}
-                        </div>
-                    </header>
-                )}
+                        {header}
+                    </div>
+                </header>
+            )}
 
                 {/* Main Content Area */}
                 <main className="py-2 bg-gray-100 dark:bg-gray-900 min-h-screen">

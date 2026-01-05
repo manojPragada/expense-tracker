@@ -5,6 +5,7 @@ use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\IncomeController;
 use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SubmitController;
 use App\Http\Controllers\SubmissionsController;
 use App\Http\Controllers\WeeklyOverviewController;
@@ -24,6 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/submissions', [SubmissionsController::class, 'index'])->name('submissions');
     Route::get('/overview', [OverviewController::class, 'index'])->name('overview');
     Route::get('/weekly-overview', [WeeklyOverviewController::class, 'index'])->name('weekly-overview');
+    Route::get('/reports', [ReportsController::class, 'index'])->name('reports');
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories');
     
     Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
